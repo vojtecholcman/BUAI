@@ -1,0 +1,12 @@
+dvouciferná čísla
+záznam, nebo se nestala žádná nehoda, kontext ke dnům, nevíme co znamená nula,
+neznámá metodika
+extrémy
+
+
+průměr, medián, modus, rozpětí
+
+kombinace průměru a mediánu k odhalení krajních hodnot
+
+
+Nejčastěji 2, 3 nehody za den. naopak extrém, 7,8 se vyskytuje pouze dvakrát. Bohužel z kontextu nevíme o danném oddělení kotext, nemáme jeho velikost. Tím pádem neumíme určit další analýzu dní.
