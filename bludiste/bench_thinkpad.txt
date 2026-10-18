@@ -1,0 +1,15 @@
+Python 3.13.5 | Linux-6.12.111+deb13-amd64-x86_64-with-glibc2.41 | x86_64
+n=  1000  gen     0.5 s  BFS náhodné     0.0 s (cesta neexistuje)  BFS nejhorší     1.2 s  => nejhorší celkem     1.7 s  | RSS 13 MB
+n=  2000  gen     2.0 s  BFS náhodné     0.0 s (cesta neexistuje)  BFS nejhorší     4.5 s  => nejhorší celkem     6.5 s  | RSS 14 MB
+n=  4000  gen     7.6 s  BFS náhodné     0.0 s (cesta neexistuje)  BFS nejhorší    17.7 s  => nejhorší celkem    25.3 s  | RSS 18 MB
+
+~1700 ns na pole => odhad n_max ≈ 17,800 (cíl 90% z limitu 600 s)
+
+n= 17800  gen   142.8 s  BFS náhodné     0.0 s (cesta neexistuje)  BFS nejhorší   314.6 s  => nejhorší celkem   457.4 s  | RSS 92 MB
+
+n = 17,800: nejhorší případ 457 s z 600 s -> OK, v limitu
+Python 3.13.5
+Model name:                              AMD Ryzen 5 PRO 4650U with Radeon Graphics
+               total        used        free      shared  buff/cache   available
+Mem:           7.0Gi       4.4Gi       1.4Gi        81Mi       1.1Gi       2.6Gi
+Swap:          5.5Gi       1.8Gi       3.7Gi
