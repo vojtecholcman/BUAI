@@ -57,23 +57,43 @@ def generate_maze(n, ratio=0.4, seed=None):
     """Náhodně rozmístí ceil(ratio * n²) překážek; start i cíl zůstanou volné.
     Losování s odmítnutím: náhodné pole, a pokud už je zeď, losuje se znovu.
     Při 40 % zaplnění je potřeba v průměru ~1,28 pokusu na překážku
-    a nevzniká žádná pomocná struktura o velikosti n²."""
+    a nevzniká žádná pomocná struktura o velikosti n².
+    Pro ratio > 50 % se postupuje obráceně (všude zeď a losují se volná
+    pole), aby losování nezpomalovalo při téměř plné mřížce."""
     if n < 2:
         raise ValueError("n musí být alespoň 2")
+    if not 0 <= ratio <= 1:
+        raise ValueError("podíl překážek musí být mezi 0 a 1")
     N = n * n
     k = math.ceil(ratio * N)
     if k > N - 2:
         raise ValueError(f"{k} překážek se nevejde do {N - 2} volných polí")
     rng = random.Random(seed)
-    g = new_grid(n)
-    placed = 0
     rr = rng.randrange
-    while placed < k:
-        i = rr(1, N - 1)          # nikdy start (0) ani cíl (N-1)
-        if get(g, i) == FREE:
-            mark(g, i, WALL)
-            placed += 1
+    if k <= (N - 2) // 2:
+        g = new_grid(n)
+        placed = 0
+        while placed < k:
+            i = rr(1, N - 1)      # nikdy start (0) ani cíl (N-1)
+            if get(g, i) == FREE:
+                mark(g, i, WALL)
+                placed += 1
+    else:
+        g = bytearray(b"\x55" * ((N + 3) // 4))   # 01010101 = 4× WALL
+        clear(g, 0)
+        clear(g, N - 1)
+        freed, to_free = 0, N - 2 - k
+        while freed < to_free:
+            i = rr(1, N - 1)
+            if get(g, i) == WALL:
+                clear(g, i)
+                freed += 1
     return g
+
+
+def clear(g, i):
+    """Nastaví pole na FREE."""
+    g[i >> 2] &= ~(3 << ((i & 3) << 1)) & 0xFF
 
 
 def from_bytes(grid1, n):
@@ -202,33 +222,49 @@ def peak_memory_mb():
     return r / 1024 / 1024 if sys.platform == "darwin" else r / 1024
 
 
+DEFAULT_PERCENT = 40      # zadání: alespoň 40 % překážek
+
+
 def read_input():
-    """Hrana n a seed z příkazové řádky, jinak se program zeptá.
-    Seed je nepovinný – když chybí, vylosuje se a vypíše, aby šlo
-    stejné bludiště zopakovat."""
+    """Hrana n, seed a procento překážek z příkazové řádky:
+        python3 maze_opt.py n [seed] [procento]     (seed "-" = náhodný)
+    bez argumentů se program zeptá. Seed i procento jsou nepovinné.
+    Když seed chybí, vylosuje se a vypíše, aby šlo bludiště zopakovat."""
     import sys
-    if len(sys.argv) > 1:
-        n = int(sys.argv[1])
-        seed = int(sys.argv[2]) if len(sys.argv) > 2 else None
+    args = sys.argv[1:]
+    if args:
+        n = int(args[0])
+        seed = int(args[1]) if len(args) > 1 and args[1] != "-" else None
+        percent = float(args[2]) if len(args) > 2 else DEFAULT_PERCENT
     else:
         n = int(input("Zadej velikost hrany bludiště n: "))
+        s = input(f"Procento překážek (Enter = {DEFAULT_PERCENT}): ").strip()
+        percent = float(s.replace(",", ".")) if s else DEFAULT_PERCENT
         s = input("Seed (Enter = náhodné bludiště): ").strip()
         seed = int(s) if s else None
     if n < 2:
         raise SystemExit("n musí být alespoň 2")
+    if not 0 <= percent < 100:
+        raise SystemExit("procento překážek musí být od 0 do 100")
+    if percent < 40:
+        print(f"Pozor: {percent:g} % je méně, než chce zadání (alespoň 40 %).")
     if seed is None:
         seed = random.randrange(10**9)
-    return n, seed
+    return n, seed, percent
 
 
 def main():
     import time
-    n, seed = read_input()
-    k = math.ceil(0.4 * n * n)
-    print(f"\nBludiště {n:,} × {n:,} ({n * n:,} polí), {k:,} překážek (40 %), seed {seed}")
+    n, seed, percent = read_input()
+    ratio = percent / 100
+    k = math.ceil(ratio * n * n)
+    print(f"\nBludiště {n:,} × {n:,} ({n * n:,} polí), {k:,} překážek ({percent:g} %), seed {seed}")
 
     t0 = time.perf_counter()
-    g = generate_maze(n, seed=seed)
+    try:
+        g = generate_maze(n, ratio=ratio, seed=seed)
+    except ValueError as e:
+        raise SystemExit(f"Chyba: {e}")
     t1 = time.perf_counter()
     res = bfs(g, n)
     t2 = time.perf_counter()
