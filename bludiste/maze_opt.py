@@ -191,11 +191,41 @@ def print_maze(g, n, moves=None):
         print(" ".join(row))
 
 
-if __name__ == "__main__":
+def peak_memory_mb():
+    """Špičková paměť procesu v MB (Linux/macOS); na Windows None."""
+    try:
+        import resource
+    except ImportError:
+        return None
     import sys
+    r = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return r / 1024 / 1024 if sys.platform == "darwin" else r / 1024
+
+
+def read_input():
+    """Hrana n a seed z příkazové řádky, jinak se program zeptá.
+    Seed je nepovinný – když chybí, vylosuje se a vypíše, aby šlo
+    stejné bludiště zopakovat."""
+    import sys
+    if len(sys.argv) > 1:
+        n = int(sys.argv[1])
+        seed = int(sys.argv[2]) if len(sys.argv) > 2 else None
+    else:
+        n = int(input("Zadej velikost hrany bludiště n: "))
+        s = input("Seed (Enter = náhodné bludiště): ").strip()
+        seed = int(s) if s else None
+    if n < 2:
+        raise SystemExit("n musí být alespoň 2")
+    if seed is None:
+        seed = random.randrange(10**9)
+    return n, seed
+
+
+def main():
     import time
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 100
-    seed = int(sys.argv[2]) if len(sys.argv) > 2 else None
+    n, seed = read_input()
+    k = math.ceil(0.4 * n * n)
+    print(f"\nBludiště {n:,} × {n:,} ({n * n:,} polí), {k:,} překážek (40 %), seed {seed}")
 
     t0 = time.perf_counter()
     g = generate_maze(n, seed=seed)
@@ -203,12 +233,21 @@ if __name__ == "__main__":
     res = bfs(g, n)
     t2 = time.perf_counter()
 
-    print(f"n={n}, seed={seed}, mřížka: {len(g):,} B")
-    print(f"generování {t1 - t0:.2f} s, BFS {t2 - t1:.2f} s")
     if res is None:
-        print("cesta NEEXISTUJE")
+        print("Výsledek: cesta NEEXISTUJE – BFS prošlo celou oblast dosažitelnou "
+              "ze startu a cíl v ní není.")
     else:
         D, moves = res
-        print(f"nejkratší cesta: {D} kroků")
+        print(f"Výsledek: nejkratší cesta má {D:,} kroků "
+              f"(dolní mez 2(n-1) = {2 * (n - 1):,})")
         if n <= 30:
+            print()
             print_maze(g, n, moves)
+            print()
+    print(f"Čas: generování {t1 - t0:.2f} s, BFS {t2 - t1:.2f} s, celkem {t2 - t0:.2f} s")
+    mem = peak_memory_mb()
+    print(f"Paměť: mřížka {len(g):,} B" + (f", špička procesu ~{mem:.0f} MB" if mem else ""))
+
+
+if __name__ == "__main__":
+    main()
