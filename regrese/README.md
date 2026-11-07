@@ -1,7 +1,5 @@
 # Regrese
 
----
-
 ## Zadaní úkolu
 
 Zadání viz pracovní sešit z dnešní hodiny, dokončit úlohu a odevzdat.
